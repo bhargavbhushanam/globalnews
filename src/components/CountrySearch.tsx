@@ -9,6 +9,14 @@ const COUNTRY_FLAGS: Record<string, string> = {
   IN: "🇮🇳", BR: "🇧🇷", AU: "🇦🇺", NG: "🇳🇬", ZA: "🇿🇦", EG: "🇪🇬",
   SA: "🇸🇦", KR: "🇰🇷", MX: "🇲🇽", RU: "🇷🇺", CA: "🇨🇦", KE: "🇰🇪",
   IL: "🇮🇱", AR: "🇦🇷",
+  IT: "🇮🇹", ES: "🇪🇸", PL: "🇵🇱", NL: "🇳🇱", SE: "🇸🇪", UA: "🇺🇦",
+  CH: "🇨🇭", TR: "🇹🇷", GR: "🇬🇷", NO: "🇳🇴",
+  ID: "🇮🇩", TH: "🇹🇭", VN: "🇻🇳", PH: "🇵🇭", SG: "🇸🇬", PK: "🇵🇰",
+  BD: "🇧🇩", MY: "🇲🇾",
+  CO: "🇨🇴", CL: "🇨🇱", PE: "🇵🇪",
+  ET: "🇪🇹", GH: "🇬🇭", MA: "🇲🇦", TZ: "🇹🇿",
+  AE: "🇦🇪", JO: "🇯🇴",
+  NZ: "🇳🇿",
 };
 
 export default function CountrySearch() {

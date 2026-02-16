@@ -120,7 +120,7 @@ export default function NavBar() {
           {/* Info badge */}
           <div className="hidden md:flex items-center gap-1.5 text-[10px] text-white/25">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            20 countries · Live data
+            48 countries · Live data
           </div>
         </div>
       </div>
