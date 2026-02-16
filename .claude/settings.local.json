@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npx next build:*)",
+      "Bash(npm ls:*)",
+      "Bash(curl:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
