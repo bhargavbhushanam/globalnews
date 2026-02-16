@@ -89,13 +89,41 @@ const ENGLISH_EDITIONS: Record<string, { hl: string; gl: string; ceid: string }>
 
 // ─── Category inference ─────────────────────────────────────────────────────
 const CATEGORY_RULES: [RegExp, NewsCategory][] = [
-  [/election|parliament|congress|senat|president|minister|government|law\b|legislation|vote|policy|political|governor|mayor|cabinet|democrat|republican|party\b/i, "politics"],
-  [/stock|market|econom|trade\b|gdp|bank\b|financ|invest|revenue|earning|profit|billion|million|startup|ipo\b|merger|acquisition|dow\b|nasdaq|s&p/i, "business"],
-  [/\bai\b|tech|software|app\b|digital|cyber|robot|chip\b|semiconductor|quantum|machine.?learn|openai|google|apple|microsoft|meta\b|amazon|tesla|spacex/i, "technology"],
-  [/football|soccer|basketball|cricket|tennis|match\b|tournament|championship|fifa|olympic|athlete|medal|sport|league|nfl|nba|mlb|f1\b|formula|rugby|boxing|mma|ufc/i, "sports"],
-  [/health|medical|hospital|disease|vaccin|who\b|doctor|patient|drug\b|treatment|cancer|virus|pandemic|clinical|pharma|surgery|mental.?health/i, "health"],
-  [/research|scientist|space\b|nasa|climate|discover|study\b|experiment|physic|biolog|species|fossil|planet|orbit|archaeolog|genome|coral|reef/i, "science"],
-  [/movie|film\b|music|artist|album|concert|netflix|disney|series|celebrit|award|grammy|oscar|festival|show\b|entertainment|actor|singer|stream|spotify|box.?office/i, "entertainment"],
+  // Crime & Justice
+  [/murder|kill|shot|shoot|arrest|prison|jail|crime|criminal|police|suspect|victim|robbery|assault|fraud|theft|homicide|kidnap|cartel|drug.?bust|felon|indict|verdict|trial\b|prosecut|manslaughter|stabbing|burglary|trafficking|gang\b|fugitive/i, "crime"],
+
+  // Politics & Government
+  [/election|parliament|congress|senat|president|minister|government|law\b|legislation|vote|voter|ballot|policy|political|governor|mayor|cabinet|democrat|republican|party\b|diplomat|treaty|sanction|impeach|bipartisan|lobby|filibuster|geopolit|nato\b|summit|alliance|negotiate|bilateral|tariff|border.?wall|shutdown|campaign|primary|caucus|gop\b|liberal|conservative|opposition|coalition|referendum|constitutional|executive.?order|white.?house|capitol|pentagon|state.?department|foreign.?affairs|ambassador|envoy/i, "politics"],
+
+  // Business & Economy
+  [/stock|market|econom|trade\b|gdp|bank\b|financ|invest|revenue|earning|profit|billion|million|startup|ipo\b|merger|acquisition|dow\b|nasdaq|s.?p.?500|wall.?street|recession|inflation|interest.?rate|fed\b|federal.?reserve|crypto|bitcoin|housing.?market|real.?estate|layoff|hiring|unemployment|retail|consumer|supply.?chain|commodit|oil.?price|wage|salary|ceo\b|corporate|shareholder|dividend|bond\b|treasury|debt\b|deficit|budget\b|tax\b|tariff/i, "business"],
+
+  // Technology
+  [/\bai\b|artificial.?intelligen|tech\b|software|app\b|digital|cyber|robot|chip\b|semiconductor|quantum|machine.?learn|openai|google|apple|microsoft|meta\b|amazon|tesla|spacex|startup|silicon.?valley|smartphone|iphone|android|cloud\b|data.?center|5g\b|broadband|internet|social.?media|tiktok|instagram|twitter|elon.?musk|zuckerberg|algorithm|automation|drone|electric.?vehicle|ev\b|battery|neural|gpt\b|chatbot|deepfake|blockchain|nft\b|metaverse|vr\b|ar\b|wearable|self.?driving|autonomous/i, "technology"],
+
+  // Sports
+  [/football|soccer|basketball|cricket|tennis|match\b|tournament|championship|fifa|olympic|athlete|medal|sport|league|nfl|nba|mlb|nhl|f1\b|formula|rugby|boxing|mma|ufc|world.?cup|super.?bowl|playoff|coach|quarterback|striker|goalkeeper|batting|bowling|grand.?slam|wimbledon|premier.?league|champions.?league|serie.?a|la.?liga|bundesliga|transfer|signing|injury.?list|hat.?trick|touchdown|home.?run|slam.?dunk|goal\b|score|roster|draft\b|stadium|arena|season\b/i, "sports"],
+
+  // Health & Medicine
+  [/health|medical|hospital|disease|vaccin|who\b|doctor|patient|drug\b|treatment|cancer|virus|pandemic|clinical|pharma|surgery|mental.?health|obesity|diabetes|alzheimer|dementia|outbreak|epidemic|cdc\b|fda\b|therapy|diagnos|symptom|organ.?transplant|blood\b|nursing|medicare|medicaid|insurance.?coverage|wellness|nutrition|diet\b|exercise|fertility|abortion|reproductive|opioid|overdose|addiction/i, "health"],
+
+  // Environment & Climate
+  [/climate|environment|pollution|emission|carbon|fossil.?fuel|renewable|solar|wind.?energy|deforestation|biodiversity|endangered|extinction|wildfire|drought|flood|hurricane|tornado|earthquake|tsunami|glacier|arctic|antarctic|ocean|coral.?reef|recycl|sustainab|green.?energy|clean.?energy|electric.?grid|epa\b|conservation|national.?park|wildlife|ecosystem|plastic|waste|contamination|air.?quality|water.?quality|sea.?level|global.?warming|net.?zero|paris.?agreement|weather|storm|snow|heat.?wave|cold.?snap|temperature|forecast/i, "environment"],
+
+  // Science & Research
+  [/research|scientist|space\b|nasa|discover|study\b|experiment|physic|biolog|species|fossil|planet|orbit|archaeolog|genome|coral|reef|telescope|satellite|asteroid|comet|mars\b|moon\b|jupiter|quantum|particle|cern\b|evolution|dna\b|gene\b|genetic|neurosci|brain\b|lab\b|journal\b|peer.?review|breakthrough|innovation|observatory|expedition|specimen|molecule/i, "science"],
+
+  // Entertainment & Culture
+  [/movie|film\b|music|artist|album|concert|netflix|disney|hbo\b|series|celebrit|award|grammy|oscar|emmy|golden.?globe|festival|show\b|entertainment|actor|actress|singer|rapper|stream|spotify|box.?office|broadway|theater|theatre|television|tv\b|reality\b|podcast|bestsell|book\b|novel|author|gallery|museum|exhibit|art\b|painting|sculpture|fashion|design|comic|anime|manga|video.?game|gaming|esport|dance|ballet|opera/i, "entertainment"],
+
+  // Education
+  [/school|university|college|student|teacher|professor|education|campus|tuition|scholarship|graduat|academic|curriculum|exam|test.?score|literacy|enrollment|classroom|dean|faculty|research.?grant|stem\b|phd\b|degree|diploma|admission|charter.?school|public.?school|private.?school|kindergarten|preschool|superintendent/i, "education"],
+
+  // Lifestyle & Travel
+  [/travel|tourism|hotel|airline|flight|vacation|resort|restaurant|food\b|chef|recipe|cooking|wine\b|dining|celebrity.?chef|michelin|real.?estate|housing|home\b|apartment|mortgage|rent\b|interior.?design|architecture|wedding|marriage|divorce|family\b|parenting|pet\b|dog\b|cat\b|garden|hobby|wellness|yoga|meditation|fitness|beauty|cosmetic|luxury|brand/i, "lifestyle"],
+
+  // Opinion & Analysis
+  [/opinion|editorial|op.?ed|analysis|commentary|column|perspective|debate|argue|viewpoint|critic|review/i, "opinion"],
 ];
 
 function inferCategory(title: string): NewsCategory {

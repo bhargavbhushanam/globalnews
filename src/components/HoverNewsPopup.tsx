@@ -14,6 +14,11 @@ const CATEGORIES: { key: NewsCategory; label: string; icon: string }[] = [
   { key: "health", label: "Health", icon: "🏥" },
   { key: "sports", label: "Sports", icon: "⚽" },
   { key: "entertainment", label: "Culture", icon: "🎬" },
+  { key: "environment", label: "Climate", icon: "🌿" },
+  { key: "crime", label: "Crime", icon: "⚖️" },
+  { key: "education", label: "Education", icon: "🎓" },
+  { key: "lifestyle", label: "Lifestyle", icon: "✈️" },
+  { key: "opinion", label: "Opinion", icon: "💬" },
   { key: "world", label: "World", icon: "🌍" },
 ];
 

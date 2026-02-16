@@ -14,6 +14,11 @@ const CATEGORIES: { key: NewsCategory; label: string; icon: string }[] = [
   { key: "health", label: "Health", icon: "🏥" },
   { key: "sports", label: "Sports", icon: "⚽" },
   { key: "entertainment", label: "Culture", icon: "🎬" },
+  { key: "environment", label: "Climate", icon: "🌿" },
+  { key: "crime", label: "Crime", icon: "⚖️" },
+  { key: "education", label: "Education", icon: "🎓" },
+  { key: "lifestyle", label: "Lifestyle", icon: "✈️" },
+  { key: "opinion", label: "Opinion", icon: "💬" },
   { key: "world", label: "World", icon: "🌍" },
 ];
 
@@ -51,6 +56,11 @@ function catColor(cat: NewsCategory): string {
     health: "bg-rose-500/20 text-rose-300 border-rose-500/30",
     sports: "bg-orange-500/20 text-orange-300 border-orange-500/30",
     entertainment: "bg-pink-500/20 text-pink-300 border-pink-500/30",
+    environment: "bg-green-500/20 text-green-300 border-green-500/30",
+    crime: "bg-red-500/20 text-red-300 border-red-500/30",
+    education: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+    lifestyle: "bg-teal-500/20 text-teal-300 border-teal-500/30",
+    opinion: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
     world: "bg-blue-500/20 text-blue-300 border-blue-500/30",
   };
   return m[cat];
@@ -65,6 +75,11 @@ function catAccent(cat: NewsCategory): string {
     health: "border-rose-500/20",
     sports: "border-orange-500/20",
     entertainment: "border-pink-500/20",
+    environment: "border-green-500/20",
+    crime: "border-red-500/20",
+    education: "border-indigo-500/20",
+    lifestyle: "border-teal-500/20",
+    opinion: "border-yellow-500/20",
     world: "border-blue-500/20",
   };
   return m[cat];

@@ -19,6 +19,11 @@ export type NewsCategory =
   | "health"
   | "science"
   | "entertainment"
+  | "environment"
+  | "crime"
+  | "education"
+  | "lifestyle"
+  | "opinion"
   | "world";
 
 export interface CountryData {
