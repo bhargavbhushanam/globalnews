@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useGlobeStore } from "@/store/useGlobeStore";
-import { getCountryByCode } from "@/data/mockNews";
 import { NewsCategory, NewsArticle } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -138,8 +137,12 @@ export default function HoverNewsPopup() {
   const lastCountryRef = useRef<string | null>(null);
 
   // The country to display: locked (mouse in popup) or hovered
+  const countries = useGlobeStore((s) => s.countries);
+
   const displayCode = isMouseInPopup ? lockedCountry : hoveredCountry;
-  const countryData = displayCode ? getCountryByCode(displayCode) : null;
+  const countryData = displayCode
+    ? countries.find((c) => c.code === displayCode) || null
+    : null;
 
   // Track mouse position and anchor popup when entering a new country
   useEffect(() => {
@@ -150,8 +153,8 @@ export default function HoverNewsPopup() {
 
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const popupW = 420;
-        const popupH = 420;
+        const popupW = 480;
+        const popupH = 520;
 
         let x = e.clientX + 24;
         let y = e.clientY - 60;
@@ -253,7 +256,7 @@ export default function HoverNewsPopup() {
           style={{
             left: position.x,
             top: position.y,
-            width: 420,
+            width: 480,
           }}
           onMouseEnter={handlePopupMouseEnter}
           onMouseLeave={handlePopupMouseLeave}
@@ -327,8 +330,8 @@ export default function HoverNewsPopup() {
             <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
             {/* Articles */}
-            <div className="px-3 py-2 max-h-[280px] overflow-y-auto scrollbar-thin">
-              {displayArticles.slice(0, 5).map((article, i) => (
+            <div className="px-3 py-2 max-h-[360px] overflow-y-auto scrollbar-thin">
+              {displayArticles.slice(0, 8).map((article, i) => (
                 <motion.div
                   key={article.id}
                   initial={{ opacity: 0, x: 12 }}

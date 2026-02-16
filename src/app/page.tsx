@@ -6,12 +6,14 @@ import NewsPanel from "@/components/NewsPanel";
 import CountrySearch from "@/components/CountrySearch";
 import LoadingScreen from "@/components/LoadingScreen";
 import HoverNewsPopup from "@/components/HoverNewsPopup";
+import NewsLoader from "@/components/NewsLoader";
 
 const Globe = dynamic(() => import("@/components/Globe"), { ssr: false });
 
 export default function Home() {
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#040810]">
+      <NewsLoader />
       <LoadingScreen />
       <NavBar />
       <CountrySearch />

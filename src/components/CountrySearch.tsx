@@ -1,7 +1,6 @@
 "use client";
 
 import { useGlobeStore } from "@/store/useGlobeStore";
-import { mockCountries } from "@/data/mockNews";
 import { motion, AnimatePresence } from "framer-motion";
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -20,11 +19,12 @@ const COUNTRY_FLAGS: Record<string, string> = {
 };
 
 export default function CountrySearch() {
-  const { searchQuery, selectCountry, setSearchQuery } = useGlobeStore();
+  const { searchQuery, selectCountry, setSearchQuery, countries } =
+    useGlobeStore();
 
   const filtered =
     searchQuery.length > 0
-      ? mockCountries.filter(
+      ? countries.filter(
           (c) =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             c.articles.some(

@@ -2,20 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useGlobeStore } from "@/store/useGlobeStore";
-import { trendingHeadlines } from "@/data/mockNews";
 import { motion } from "framer-motion";
 
 export default function NavBar() {
-  const { searchQuery, setSearchQuery } = useGlobeStore();
+  const { searchQuery, setSearchQuery, trendingHeadlines, countries, newsLoading } =
+    useGlobeStore();
   const [tickerIndex, setTickerIndex] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
 
   useEffect(() => {
+    if (trendingHeadlines.length === 0) return;
     const interval = setInterval(() => {
       setTickerIndex((i) => (i + 1) % trendingHeadlines.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [trendingHeadlines.length]);
 
   return (
     <div className="fixed top-0 left-0 right-0 z-40">
@@ -44,7 +45,7 @@ export default function NavBar() {
             exit={{ opacity: 0, y: -10 }}
             className="text-white/60"
           >
-            {trendingHeadlines[tickerIndex]}
+            {trendingHeadlines[tickerIndex] || "Loading headlines..."}
           </motion.span>
         </div>
       </div>
@@ -120,7 +121,7 @@ export default function NavBar() {
           {/* Info badge */}
           <div className="hidden md:flex items-center gap-1.5 text-[10px] text-white/25">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            48 countries · Live data
+            {countries.length} countries · {newsLoading ? "Loading..." : "Live data"}
           </div>
         </div>
       </div>

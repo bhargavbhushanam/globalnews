@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useGlobeStore } from "@/store/useGlobeStore";
-import { getCountryByCode } from "@/data/mockNews";
 import { NewsCategory, NewsArticle } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -394,7 +393,10 @@ export default function NewsPanel() {
   } = useGlobeStore();
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
 
-  const countryData = selectedCountry ? getCountryByCode(selectedCountry) : null;
+  const countries = useGlobeStore((s) => s.countries);
+  const countryData = selectedCountry
+    ? countries.find((c) => c.code === selectedCountry) || null
+    : null;
 
   // Reset article selection when country changes
   useEffect(() => {

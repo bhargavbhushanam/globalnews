@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { NewsCategory } from "@/types";
+import { NewsCategory, CountryData } from "@/types";
 
 interface GlobeState {
   selectedCountry: string | null;
@@ -11,6 +11,13 @@ interface GlobeState {
   searchQuery: string;
   globeReady: boolean;
 
+  // Dynamic news data
+  countries: CountryData[];
+  trendingHeadlines: string[];
+  newsLoading: boolean;
+  newsError: boolean;
+  lastFetched: number | null;
+
   selectCountry: (code: string | null) => void;
   setHoveredCountry: (code: string | null) => void;
   setMousePos: (pos: { x: number; y: number }) => void;
@@ -19,6 +26,12 @@ interface GlobeState {
   setSearchQuery: (q: string) => void;
   setGlobeReady: (ready: boolean) => void;
   closePanel: () => void;
+
+  setCountries: (countries: CountryData[]) => void;
+  setTrendingHeadlines: (headlines: string[]) => void;
+  setNewsLoading: (loading: boolean) => void;
+  setNewsError: (error: boolean) => void;
+  setLastFetched: (ts: number) => void;
 }
 
 export const useGlobeStore = create<GlobeState>((set) => ({
@@ -30,6 +43,12 @@ export const useGlobeStore = create<GlobeState>((set) => ({
   hoverCategory: null,
   searchQuery: "",
   globeReady: false,
+
+  countries: [],
+  trendingHeadlines: [],
+  newsLoading: true,
+  newsError: false,
+  lastFetched: null,
 
   selectCountry: (code) =>
     set({
@@ -55,4 +74,10 @@ export const useGlobeStore = create<GlobeState>((set) => ({
   setGlobeReady: (ready) => set({ globeReady: ready }),
   closePanel: () =>
     set({ panelOpen: false, selectedCountry: null, activeCategory: null }),
+
+  setCountries: (countries) => set({ countries }),
+  setTrendingHeadlines: (headlines) => set({ trendingHeadlines: headlines }),
+  setNewsLoading: (loading) => set({ newsLoading: loading }),
+  setNewsError: (error) => set({ newsError: error }),
+  setLastFetched: (ts) => set({ lastFetched: ts }),
 }));
