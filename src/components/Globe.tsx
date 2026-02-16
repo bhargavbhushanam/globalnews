@@ -148,37 +148,8 @@ export default function Globe() {
     [selectedCountry, hoveredCountry]
   );
 
-  const polygonLabel = useCallback(
-    (obj: object) => {
-      const feat = obj as CountryFeature;
-      const code = getCountryCode(feat);
-      if (!COUNTRY_CODES_WITH_NEWS.has(code)) return "";
-      const count = getArticleCount(code);
-      return `
-        <div style="
-          background: rgba(10, 15, 30, 0.92);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(0, 180, 255, 0.3);
-          padding: 10px 16px;
-          border-radius: 10px;
-          font-family: system-ui, sans-serif;
-          color: white;
-          min-width: 140px;
-        ">
-          <div style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">
-            ${feat.properties.ADMIN}
-          </div>
-          <div style="font-size: 12px; color: rgba(0, 200, 255, 0.9);">
-            ${count} ${count === 1 ? "story" : "stories"} available
-          </div>
-          <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">
-            Click to explore
-          </div>
-        </div>
-      `;
-    },
-    []
-  );
+  // Tooltip disabled — using HoverNewsPopup instead
+  const polygonLabel = useCallback(() => "", []);
 
   // Breaking news markers
   const breakingPoints = mockCountries

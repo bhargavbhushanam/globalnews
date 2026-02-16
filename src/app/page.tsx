@@ -5,6 +5,7 @@ import NavBar from "@/components/NavBar";
 import NewsPanel from "@/components/NewsPanel";
 import CountrySearch from "@/components/CountrySearch";
 import LoadingScreen from "@/components/LoadingScreen";
+import HoverNewsPopup from "@/components/HoverNewsPopup";
 
 const Globe = dynamic(() => import("@/components/Globe"), { ssr: false });
 
@@ -15,6 +16,7 @@ export default function Home() {
       <NavBar />
       <CountrySearch />
       <Globe />
+      <HoverNewsPopup />
       <NewsPanel />
 
       {/* Bottom hint */}
