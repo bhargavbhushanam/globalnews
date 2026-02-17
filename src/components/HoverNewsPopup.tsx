@@ -6,20 +6,20 @@ import { NewsCategory, NewsArticle } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-const CATEGORIES: { key: NewsCategory; label: string; icon: string }[] = [
-  { key: "politics", label: "Politics", icon: "🏛" },
-  { key: "business", label: "Business", icon: "📈" },
-  { key: "technology", label: "Tech", icon: "💻" },
-  { key: "science", label: "Science", icon: "🔬" },
-  { key: "health", label: "Health", icon: "🏥" },
-  { key: "sports", label: "Sports", icon: "⚽" },
-  { key: "entertainment", label: "Culture", icon: "🎬" },
-  { key: "environment", label: "Climate", icon: "🌿" },
-  { key: "crime", label: "Crime", icon: "⚖️" },
-  { key: "education", label: "Education", icon: "🎓" },
-  { key: "lifestyle", label: "Lifestyle", icon: "✈️" },
-  { key: "opinion", label: "Opinion", icon: "💬" },
-  { key: "world", label: "World", icon: "🌍" },
+const CATEGORIES: { key: NewsCategory; label: string }[] = [
+  { key: "politics", label: "Politics" },
+  { key: "business", label: "Business" },
+  { key: "technology", label: "Tech" },
+  { key: "science", label: "Science" },
+  { key: "health", label: "Health" },
+  { key: "sports", label: "Sports" },
+  { key: "entertainment", label: "Culture" },
+  { key: "environment", label: "Climate" },
+  { key: "crime", label: "Crime" },
+  { key: "education", label: "Education" },
+  { key: "lifestyle", label: "Lifestyle" },
+  { key: "opinion", label: "Opinion" },
+  { key: "world", label: "World" },
 ];
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -39,84 +39,72 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 function timeAgo(timestamp: string): string {
   const diff = Date.now() - new Date(timestamp).getTime();
-  const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return "Just now";
-  if (hours === 1) return "1h ago";
-  if (hours < 24) return `${hours}h ago`;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 5) return "Just now";
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
   const days = Math.floor(hours / 24);
-  return days === 1 ? "1d ago" : `${days}d ago`;
-}
-
-function categoryPillStyle(cat: NewsCategory, active: boolean): string {
-  if (active) return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30";
-  return "bg-white/[0.03] text-white/35 border-white/[0.05] hover:bg-white/[0.06] hover:text-white/50";
+  return `${days}d`;
 }
 
 function ArticleRow({
   article,
   onClick,
+  isFirst,
 }: {
   article: NewsArticle;
   onClick: () => void;
+  isFirst?: boolean;
 }) {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       onClick={onClick}
-      className="group flex gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-all duration-200 cursor-pointer"
+      className="group flex gap-3.5 py-3 px-4 cursor-pointer hover:bg-white/[0.03] transition-colors duration-150"
     >
-      <div className="relative w-[88px] h-[58px] rounded-lg overflow-hidden flex-shrink-0 bg-white/[0.03]">
+      {/* Thumbnail */}
+      <div className="relative w-[72px] h-[54px] rounded-lg overflow-hidden flex-shrink-0 bg-white/[0.04]">
         {!imgError ? (
           <Image
             src={article.imageUrl || ""}
-            alt={article.title}
+            alt=""
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-110"
-            sizes="88px"
+            className="object-cover"
+            sizes="72px"
             onError={() => setImgError(true)}
             unoptimized
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-white/10 text-lg">
-            📰
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-5 h-5 rounded bg-white/[0.06]" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
       </div>
 
+      {/* Content */}
       <div className="flex-1 min-w-0">
-        <h4 className="text-[12px] font-semibold text-white/85 leading-[1.35] line-clamp-2 group-hover:text-cyan-300 transition-colors">
+        <h4
+          className={`font-medium leading-[1.4] line-clamp-2 transition-colors duration-150 ${
+            isFirst
+              ? "text-[13px] text-white/90 group-hover:text-white"
+              : "text-[12.5px] text-white/75 group-hover:text-white/90"
+          }`}
+        >
           {article.title}
         </h4>
-        <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[10px] text-cyan-400/60 font-medium">
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <span className="text-[10.5px] text-white/35 font-medium truncate max-w-[140px]">
             {article.source}
           </span>
-          <span className="text-white/10">·</span>
-          <span className="text-[10px] text-white/25">
+          <span className="text-white/15 text-[8px]">&bull;</span>
+          <span className="text-[10.5px] text-white/25">
             {timeAgo(article.timestamp)}
           </span>
         </div>
       </div>
-      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <svg
-          className="w-3.5 h-3.5 text-cyan-400/50"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
-      </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -141,7 +129,6 @@ export default function HoverNewsPopup() {
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCountryRef = useRef<string | null>(null);
 
-  // The country to display: locked (mouse in popup) or hovered
   const countries = useGlobeStore((s) => s.countries);
 
   const displayCode = isMouseInPopup ? lockedCountry : hoveredCountry;
@@ -149,7 +136,6 @@ export default function HoverNewsPopup() {
     ? countries.find((c) => c.code === displayCode) || null
     : null;
 
-  // Track mouse position and anchor popup when entering a new country
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (hoveredCountry && hoveredCountry !== lastCountryRef.current) {
@@ -158,7 +144,7 @@ export default function HoverNewsPopup() {
 
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const popupW = 480;
+        const popupW = 420;
         const popupH = 520;
 
         let x = e.clientX + 24;
@@ -176,7 +162,6 @@ export default function HoverNewsPopup() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [hoveredCountry]);
 
-  // Show/hide logic with delays — keeps popup when mouse is inside it
   useEffect(() => {
     const shouldShow =
       (hoveredCountry || isMouseInPopup) && !panelOpen;
@@ -253,15 +238,15 @@ export default function HoverNewsPopup() {
       {visible && countryData && (
         <motion.div
           ref={popupRef}
-          initial={{ opacity: 0, scale: 0.92, y: 10 }}
+          initial={{ opacity: 0, scale: 0.96, y: 6 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 8 }}
-          transition={{ type: "spring", damping: 28, stiffness: 380 }}
+          exit={{ opacity: 0, scale: 0.97, y: 4 }}
+          transition={{ type: "spring", damping: 30, stiffness: 400 }}
           className="fixed z-50"
           style={{
             left: position.x,
             top: position.y,
-            width: 480,
+            width: 420,
           }}
           onMouseEnter={handlePopupMouseEnter}
           onMouseLeave={handlePopupMouseLeave}
@@ -269,47 +254,47 @@ export default function HoverNewsPopup() {
           <div
             className="rounded-2xl overflow-hidden"
             style={{
-              background:
-                "linear-gradient(145deg, rgba(12, 16, 36, 0.97) 0%, rgba(8, 14, 32, 0.98) 100%)",
-              backdropFilter: "blur(40px)",
-              border: "1px solid rgba(0, 180, 255, 0.12)",
+              background: "rgba(14, 15, 20, 0.96)",
+              backdropFilter: "blur(40px) saturate(1.3)",
+              border: "1px solid rgba(255, 255, 255, 0.07)",
               boxShadow:
-                "0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 100, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.04)",
+                "0 24px 80px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.1)",
             }}
           >
             {/* Header */}
-            <div
-              className="px-5 pt-4 pb-3"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(0, 120, 255, 0.08) 0%, transparent 60%)",
-              }}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-2xl leading-none">
+            <div className="px-5 pt-4 pb-3">
+              <div className="flex items-center gap-3 mb-3.5">
+                <span className="text-[22px] leading-none">
                   {COUNTRY_FLAGS[countryData.code] || "🌐"}
                 </span>
                 <div className="flex-1">
-                  <h3 className="text-[15px] font-bold text-white tracking-tight">
+                  <h3 className="text-[15px] font-semibold text-white/95 tracking-[-0.01em]">
                     {countryData.name}
                   </h3>
-                  <p className="text-[10px] text-white/30 mt-0.5">
-                    {countryData.articles.length} stories from trusted sources
+                  <p className="text-[10.5px] text-white/30 mt-0.5">
+                    {countryData.articles.length} headlines today
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400"></span>
-                  </span>
-                  <span className="text-[9px] text-cyan-400/80 font-semibold uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/[0.08] border border-emerald-500/[0.12]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/70" />
+                  <span className="text-[9px] text-emerald-400/70 font-medium uppercase tracking-wider">
                     Live
                   </span>
                 </div>
               </div>
 
-              {/* Category pills — clickable */}
-              <div className="flex gap-1.5 flex-wrap">
+              {/* Category pills — clean, no emojis */}
+              <div className="flex gap-1 flex-wrap">
+                <button
+                  onClick={() => setHoverCategory(null)}
+                  className={`px-2.5 py-1 rounded-md text-[10.5px] font-medium transition-all duration-150 ${
+                    !hoverCategory
+                      ? "bg-white/[0.1] text-white/70"
+                      : "text-white/30 hover:text-white/50 hover:bg-white/[0.04]"
+                  }`}
+                >
+                  All
+                </button>
                 {availableCategories.map((cat) => {
                   const count = groupedArticles[cat.key]?.length || 0;
                   const isActive = hoverCategory === cat.key;
@@ -317,14 +302,14 @@ export default function HoverNewsPopup() {
                     <button
                       key={cat.key}
                       onClick={() => setHoverCategory(cat.key)}
-                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border cursor-pointer ${categoryPillStyle(
-                        cat.key,
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-medium transition-all duration-150 ${
                         isActive
-                      )}`}
+                          ? "bg-white/[0.1] text-white/70"
+                          : "text-white/30 hover:text-white/50 hover:bg-white/[0.04]"
+                      }`}
                     >
-                      <span className="text-[10px]">{cat.icon}</span>
                       {cat.label}
-                      <span className="text-[9px] opacity-50">{count}</span>
+                      <span className="text-[9px] opacity-40">{count}</span>
                     </button>
                   );
                 })}
@@ -332,35 +317,36 @@ export default function HoverNewsPopup() {
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            <div className="h-px bg-white/[0.05] mx-4" />
 
             {/* Articles */}
-            <div className="px-3 py-2 max-h-[360px] overflow-y-auto scrollbar-thin">
+            <div className="py-1 max-h-[380px] overflow-y-auto scrollbar-thin">
               {displayArticles.slice(0, 8).map((article, i) => (
                 <motion.div
                   key={article.id}
-                  initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.04 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.03 }}
                 >
                   <ArticleRow
                     article={article}
+                    isFirst={i === 0}
                     onClick={() => handleArticleClick(article.countryCode)}
                   />
                 </motion.div>
               ))}
             </div>
 
-            {/* Footer — clickable */}
+            {/* Footer */}
+            <div className="h-px bg-white/[0.05] mx-4" />
             <button
               onClick={handleViewAll}
-              className="w-full px-5 py-3 border-t border-white/[0.04] flex items-center justify-between cursor-pointer hover:bg-white/[0.03] transition-colors"
-              style={{ background: "rgba(0, 120, 255, 0.03)" }}
+              className="w-full px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.03] transition-colors duration-150"
             >
               <span className="text-[11px] text-white/30">
                 View all {countryData.articles.length} stories
               </span>
-              <span className="text-[11px] text-cyan-400/50 flex items-center gap-1">
+              <span className="text-[11px] text-white/40 flex items-center gap-1 group">
                 Open
                 <svg
                   className="w-3 h-3"
