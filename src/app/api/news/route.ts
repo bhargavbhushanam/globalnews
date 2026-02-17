@@ -7,7 +7,7 @@ let cache: {
   timestamp: number;
 } | null = null;
 
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL = 20 * 60 * 1000; // 20 minutes (heavier fetch with topic feeds)
 
 export async function GET() {
   // Return cached data if fresh

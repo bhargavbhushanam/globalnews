@@ -453,70 +453,181 @@ async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<string> 
   }
 }
 
+// ─── Google News topic sections ──────────────────────────────────────────────
+// Google News has built-in topic feeds. We fetch these per-country to get
+// deep category coverage (10+ articles per category).
+const GOOGLE_TOPICS = [
+  "NATION",        // → politics
+  "BUSINESS",      // → business
+  "TECHNOLOGY",    // → technology
+  "SPORTS",        // → sports
+  "ENTERTAINMENT", // → entertainment
+  "SCIENCE",       // → science
+  "HEALTH",        // → health
+  "WORLD",         // → world
+];
+
+// Extra keyword searches for categories Google doesn't have built-in topics for
+const EXTRA_SEARCHES: { keywords: string; hintCategory: NewsCategory }[] = [
+  { keywords: "crime OR arrest OR murder OR police", hintCategory: "crime" },
+  { keywords: "environment OR climate OR pollution OR wildlife", hintCategory: "environment" },
+  { keywords: "school OR university OR education OR student", hintCategory: "education" },
+  { keywords: "travel OR food OR lifestyle OR tourism", hintCategory: "lifestyle" },
+  { keywords: "opinion OR editorial OR analysis", hintCategory: "opinion" },
+];
+
 /**
- * Strategy for each country:
- *  1. Try the native Google News RSS feed (gl=XX, hl=local‑lang).
- *     This returns actual domestic top headlines curated by Google for that
- *     country, in the local language. Maximally relevant.
- *  2. If the native feed returns < 3 articles within the last 24h, fall back
- *     to an English search‑based feed — but apply STRICT filtering:
- *     the article must positively mention the target country.
+ * Fetch a single RSS feed, parse it, apply relevance filtering.
+ * Returns articles or empty array on failure.
+ */
+async function fetchOneFeed(
+  url: string,
+  code: string,
+  name: string,
+  strict: boolean,
+  overrideCategory?: NewsCategory
+): Promise<NewsArticle[]> {
+  try {
+    const xml = await fetchWithTimeout(url, 6000);
+    let articles = parseRSSItems(xml, code, strict);
+
+    // If override category is set, force it for articles that would be "world"
+    if (overrideCategory) {
+      articles = articles.map((a) =>
+        a.category === "world" ? { ...a, category: overrideCategory } : a
+      );
+    }
+
+    return articles;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Apply broken-feed detection for non-English locales that return English content.
+ */
+function filterBrokenFeed(
+  articles: NewsArticle[],
+  code: string,
+  name: string,
+  locale: Locale
+): NewsArticle[] {
+  const isEnglishLocale = locale.hl.startsWith("en");
+  if (isEnglishLocale || ENGLISH_NATIVE.has(code) || articles.length === 0) {
+    return articles;
+  }
+
+  const englishCount = articles.filter((a) => {
+    const ratio = (a.title.match(/[a-zA-Z]/g) || []).length / Math.max(a.title.length, 1);
+    return ratio > 0.7;
+  }).length;
+
+  if (englishCount / articles.length <= 0.5) return articles;
+
+  // Non-English locale returned English articles → filter strictly
+  const ownSignal = COUNTRY_SIGNALS[code];
+  const nameLower = name.toLowerCase();
+  return articles.filter((a) => {
+    const ascRatio = (a.title.match(/[a-zA-Z]/g) || []).length / Math.max(a.title.length, 1);
+    if (ascRatio < 0.5) return true;
+    const t = a.title.toLowerCase();
+    return t.includes(nameLower) || (ownSignal && ownSignal.test(t));
+  });
+}
+
+/**
+ * Fetch ALL news for a single country by hitting multiple feeds in parallel:
+ *  1. Main headlines feed
+ *  2. 8 Google News topic section feeds (Business, Sports, Tech, etc.)
+ *  3. 5 keyword search feeds for missing categories (Crime, Education, etc.)
+ *
+ * This gives us ~150+ articles per country with broad category coverage.
  */
 async function fetchCountryNews(
   code: string,
   name: string
 ): Promise<NewsArticle[]> {
   const locale = LOCALE[code];
+  if (!locale) return [];
 
-  // ─── Attempt 1: native feed ─────────────────────────────────────────
-  if (locale) {
+  const base = `gl=${locale.gl}&hl=${locale.hl}&ceid=${locale.ceid}`;
+  const seen = new Set<string>(); // dedupe by title
+
+  // Build all feed URLs to fetch in parallel
+  const feedJobs: { url: string; strict: boolean; overrideCategory?: NewsCategory }[] = [];
+
+  // 1. Main headlines
+  feedJobs.push({
+    url: `https://news.google.com/rss?${base}`,
+    strict: false,
+  });
+
+  // 2. Topic section feeds
+  for (const topic of GOOGLE_TOPICS) {
+    feedJobs.push({
+      url: `https://news.google.com/rss/headlines/section/topic/${topic}?${base}`,
+      strict: false,
+    });
+  }
+
+  // 3. Keyword search feeds for missing categories
+  for (const extra of EXTRA_SEARCHES) {
+    const q = encodeURIComponent(`${extra.keywords} when:1d`);
+    feedJobs.push({
+      url: `https://news.google.com/rss/search?q=${q}&${base}`,
+      strict: false,
+      overrideCategory: extra.hintCategory,
+    });
+  }
+
+  // Fetch all feeds in parallel (within this country)
+  const feedResults = await Promise.allSettled(
+    feedJobs.map((job) =>
+      fetchOneFeed(job.url, code, name, job.strict, job.overrideCategory)
+    )
+  );
+
+  // Merge and deduplicate
+  const allArticles: NewsArticle[] = [];
+  for (const result of feedResults) {
+    if (result.status !== "fulfilled") continue;
+    let articles = result.value;
+
+    // Apply broken-feed filter
+    articles = filterBrokenFeed(articles, code, name, locale);
+
+    for (const article of articles) {
+      const key = article.title.toLowerCase().slice(0, 60);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      // Re-assign ID to be unique across feeds
+      allArticles.push({
+        ...article,
+        id: `${code.toLowerCase()}_${allArticles.length}`,
+      });
+    }
+  }
+
+  // If we got very few from native feeds, try English search fallback
+  if (allArticles.length < 5) {
     try {
-      const url = `https://news.google.com/rss?gl=${locale.gl}&hl=${locale.hl}&ceid=${locale.ceid}`;
-      const xml = await fetchWithTimeout(url);
-      let articles = parseRSSItems(xml, code);
-
-      // If the locale is non-English but the feed returned mostly English
-      // articles, the native feed didn't work (e.g. Amharic for Ethiopia).
-      // Apply strict filtering — only keep articles that mention the country.
-      const isEnglishLocale = locale.hl.startsWith("en");
-      if (!isEnglishLocale && !ENGLISH_NATIVE.has(code) && articles.length > 0) {
-        const englishCount = articles.filter((a) => {
-          const ratio = (a.title.match(/[a-zA-Z]/g) || []).length / Math.max(a.title.length, 1);
-          return ratio > 0.7;
-        }).length;
-        const englishRatio = englishCount / articles.length;
-
-        if (englishRatio > 0.5) {
-          // Non-English locale returned English articles → feed is broken
-          const ownSignal = COUNTRY_SIGNALS[code];
-          const nameLower = name.toLowerCase();
-          articles = articles.filter((a) => {
-            const t = a.title.toLowerCase();
-            // Non-Latin titles are fine (genuinely local)
-            const ascRatio = (a.title.match(/[a-zA-Z]/g) || []).length / Math.max(a.title.length, 1);
-            if (ascRatio < 0.5) return true;
-            // English titles must mention the country
-            return t.includes(nameLower) || (ownSignal && ownSignal.test(t));
-          });
-        }
+      const q = encodeURIComponent(name + " when:1d");
+      const url = `https://news.google.com/rss/search?q=${q}&hl=en&gl=US&ceid=US:en`;
+      const fallback = await fetchOneFeed(url, code, name, true);
+      for (const article of fallback) {
+        const key = article.title.toLowerCase().slice(0, 60);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        allArticles.push({
+          ...article,
+          id: `${code.toLowerCase()}_${allArticles.length}`,
+        });
       }
-
-      if (articles.length >= 3) return articles.slice(0, 15);
-    } catch { /* fall through */ }
+    } catch { /* ignore */ }
   }
 
-  // ─── Attempt 2: English search fallback (STRICT mode) ───────────────
-  // Search-based feeds are noisy. strict=true requires every article to
-  // positively mention the target country by name/signal.
-  try {
-    const q = encodeURIComponent(name + " when:1d");
-    const url = `https://news.google.com/rss/search?q=${q}&hl=en&gl=US&ceid=US:en`;
-    const xml = await fetchWithTimeout(url);
-    const articles = parseRSSItems(xml, code, true); // strict mode
-    return articles.slice(0, 15);
-  } catch {
-    return [];
-  }
+  return allArticles;
 }
 
 // Concurrency limiter
@@ -553,7 +664,7 @@ export async function fetchAllNews(): Promise<{
       const articles = await fetchCountryNews(c.code, c.name);
       return { ...c, articles } as CountryData;
     },
-    10
+    6 // Lower country concurrency since each country fires 14 parallel feeds
   );
 
   const countriesWithNews = countryResults.filter((c) => c.articles.length > 0);
