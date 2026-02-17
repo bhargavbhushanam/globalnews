@@ -21,11 +21,11 @@ function getCountryCode(feat: CountryFeature): string {
 }
 
 function heatColor(count: number): string {
-  if (count === 0) return "rgba(30, 60, 120, 0.08)";
-  if (count <= 2) return "rgba(0, 200, 255, 0.35)";
-  if (count <= 5) return "rgba(0, 255, 170, 0.4)";
-  if (count <= 10) return "rgba(255, 220, 50, 0.45)";
-  return "rgba(255, 90, 50, 0.5)";
+  if (count === 0) return "rgba(40, 55, 80, 0.08)";
+  if (count <= 2) return "rgba(100, 190, 220, 0.3)";
+  if (count <= 5) return "rgba(100, 210, 170, 0.35)";
+  if (count <= 10) return "rgba(220, 200, 80, 0.38)";
+  return "rgba(220, 120, 70, 0.42)";
 }
 
 export default function Globe() {
@@ -132,8 +132,8 @@ export default function Globe() {
     (obj: object) => {
       const feat = obj as CountryFeature;
       const code = getCountryCode(feat);
-      if (code === selectedCountry) return "rgba(0, 180, 255, 0.6)";
-      if (code === hoveredCountry) return "rgba(0, 220, 255, 0.45)";
+      if (code === selectedCountry) return "rgba(100, 200, 240, 0.5)";
+      if (code === hoveredCountry) return "rgba(130, 210, 240, 0.4)";
       return heatColor(articleCountMap.get(code) || 0);
     },
     [selectedCountry, hoveredCountry, articleCountMap]
@@ -143,8 +143,8 @@ export default function Globe() {
     (obj: object) => {
       const feat = obj as CountryFeature;
       const code = getCountryCode(feat);
-      if (code === selectedCountry) return "rgba(0, 180, 255, 0.3)";
-      if (code === hoveredCountry) return "rgba(0, 220, 255, 0.2)";
+      if (code === selectedCountry) return "rgba(100, 200, 240, 0.2)";
+      if (code === hoveredCountry) return "rgba(130, 210, 240, 0.15)";
       return "rgba(30, 60, 120, 0.05)";
     },
     [selectedCountry, hoveredCountry]
@@ -190,7 +190,7 @@ export default function Globe() {
         polygonsData={geoData.features}
         polygonCapColor={polygonCapColor}
         polygonSideColor={polygonSideColor}
-        polygonStrokeColor={() => "rgba(100, 180, 255, 0.15)"}
+        polygonStrokeColor={() => "rgba(120, 160, 200, 0.12)"}
         polygonAltitude={polygonAltitude}
         polygonLabel={polygonLabel}
         onPolygonClick={handleCountryClick}
@@ -203,8 +203,8 @@ export default function Globe() {
         pointAltitude={0.05}
         pointRadius="size"
         pointsMerge={false}
-        atmosphereColor="rgba(0, 150, 255, 1)"
-        atmosphereAltitude={0.2}
+        atmosphereColor="rgba(80, 140, 200, 0.7)"
+        atmosphereAltitude={0.15}
         animateIn={true}
         width={dimensions.width}
         height={dimensions.height}

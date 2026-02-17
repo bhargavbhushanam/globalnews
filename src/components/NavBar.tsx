@@ -22,28 +22,24 @@ export default function NavBar() {
     <div className="fixed top-0 left-0 right-0 z-40">
       {/* Trending ticker */}
       <div
-        className="h-8 flex items-center justify-center overflow-hidden"
+        className="h-7 flex items-center justify-center overflow-hidden"
         style={{
-          background:
-            "linear-gradient(90deg, rgba(255, 50, 50, 0.15) 0%, rgba(255, 100, 50, 0.1) 50%, rgba(255, 50, 50, 0.15) 100%)",
-          borderBottom: "1px solid rgba(255, 80, 50, 0.15)",
+          background: "rgba(10, 10, 14, 0.85)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
         }}
       >
-        <div className="flex items-center gap-2 text-[11px]">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-          </span>
-          <span className="text-red-400/80 font-semibold uppercase tracking-wider text-[10px]">
+        <div className="flex items-center gap-2.5 text-[11px]">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500/80" />
+          <span className="text-red-400/70 font-semibold uppercase tracking-wider text-[9px]">
             Trending
           </span>
-          <span className="text-white/20">|</span>
+          <span className="text-white/12">|</span>
           <motion.span
             key={tickerIndex}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="text-white/60"
+            exit={{ opacity: 0, y: -8 }}
+            className="text-white/50 text-[11px]"
           >
             {trendingHeadlines[tickerIndex] || "Loading headlines..."}
           </motion.span>
@@ -52,38 +48,34 @@ export default function NavBar() {
 
       {/* Main nav */}
       <div
-        className="h-14 flex items-center justify-between px-5"
+        className="h-14 flex items-center justify-between px-6"
         style={{
-          background:
-            "linear-gradient(180deg, rgba(8, 12, 30, 0.9) 0%, rgba(8, 12, 30, 0.7) 100%)",
-          backdropFilter: "blur(20px)",
+          background: "rgba(8, 9, 14, 0.8)",
+          backdropFilter: "blur(24px) saturate(1.2)",
           borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
         }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
             style={{
-              background:
-                "linear-gradient(135deg, rgba(0, 180, 255, 0.3), rgba(0, 120, 255, 0.2))",
-              border: "1px solid rgba(0, 180, 255, 0.3)",
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
             }}
           >
             🌐
           </div>
-          <div>
-            <h1 className="text-base font-bold text-white tracking-tight">
-              Global<span className="text-cyan-400">News</span>
-            </h1>
-          </div>
+          <h1 className="text-xl font-bold text-white/95 tracking-tight">
+            Global<span className="text-white/50 font-medium">News</span>
+          </h1>
         </div>
 
         {/* Search */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div
             className={`relative transition-all duration-300 ${
-              searchFocused ? "w-72" : "w-52"
+              searchFocused ? "w-72" : "w-56"
             }`}
           >
             <input
@@ -93,13 +85,13 @@ export default function NavBar() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               placeholder="Search countries or topics..."
-              className="w-full h-9 pl-9 pr-3 rounded-full text-xs text-white/80 placeholder:text-white/20 outline-none transition-all"
+              className="w-full h-9 pl-9 pr-3 rounded-xl text-[13px] text-white/80 placeholder:text-white/20 outline-none transition-all"
               style={{
                 background: searchFocused
                   ? "rgba(255, 255, 255, 0.08)"
                   : "rgba(255, 255, 255, 0.04)",
                 border: searchFocused
-                  ? "1px solid rgba(0, 180, 255, 0.3)"
+                  ? "1px solid rgba(255, 255, 255, 0.15)"
                   : "1px solid rgba(255, 255, 255, 0.06)",
               }}
             />
@@ -119,9 +111,9 @@ export default function NavBar() {
           </div>
 
           {/* Info badge */}
-          <div className="hidden md:flex items-center gap-1.5 text-[10px] text-white/25">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            {countries.length} countries · {newsLoading ? "Loading..." : "Live data"}
+          <div className="hidden md:flex items-center gap-1.5 text-[10px] text-white/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/70" />
+            {countries.length} countries {newsLoading ? "" : ""}
           </div>
         </div>
       </div>

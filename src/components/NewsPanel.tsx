@@ -6,20 +6,20 @@ import { NewsCategory, NewsArticle } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-const CATEGORIES: { key: NewsCategory; label: string; icon: string }[] = [
-  { key: "politics", label: "Politics", icon: "🏛" },
-  { key: "business", label: "Business", icon: "📈" },
-  { key: "technology", label: "Tech", icon: "💻" },
-  { key: "science", label: "Science", icon: "🔬" },
-  { key: "health", label: "Health", icon: "🏥" },
-  { key: "sports", label: "Sports", icon: "⚽" },
-  { key: "entertainment", label: "Culture", icon: "🎬" },
-  { key: "environment", label: "Climate", icon: "🌿" },
-  { key: "crime", label: "Crime", icon: "⚖️" },
-  { key: "education", label: "Education", icon: "🎓" },
-  { key: "lifestyle", label: "Lifestyle", icon: "✈️" },
-  { key: "opinion", label: "Opinion", icon: "💬" },
-  { key: "world", label: "World", icon: "🌍" },
+const CATEGORIES: { key: NewsCategory; label: string }[] = [
+  { key: "politics", label: "Politics" },
+  { key: "business", label: "Business" },
+  { key: "technology", label: "Tech" },
+  { key: "science", label: "Science" },
+  { key: "health", label: "Health" },
+  { key: "sports", label: "Sports" },
+  { key: "entertainment", label: "Culture" },
+  { key: "environment", label: "Climate" },
+  { key: "crime", label: "Crime" },
+  { key: "education", label: "Education" },
+  { key: "lifestyle", label: "Lifestyle" },
+  { key: "opinion", label: "Opinion" },
+  { key: "world", label: "World" },
 ];
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -39,48 +39,41 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 function timeAgo(timestamp: string): string {
   const diff = Date.now() - new Date(timestamp).getTime();
-  const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return "Just now";
-  if (hours === 1) return "1 hour ago";
+  const mins = Math.floor(diff / 60000);
+  if (mins < 5) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return days === 1 ? "1 day ago" : `${days}d ago`;
 }
 
-function catColor(cat: NewsCategory): string {
-  const m: Record<NewsCategory, string> = {
-    politics: "bg-violet-500/20 text-violet-300 border-violet-500/30",
-    business: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-    technology: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
-    science: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    health: "bg-rose-500/20 text-rose-300 border-rose-500/30",
-    sports: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-    entertainment: "bg-pink-500/20 text-pink-300 border-pink-500/30",
-    environment: "bg-green-500/20 text-green-300 border-green-500/30",
-    crime: "bg-red-500/20 text-red-300 border-red-500/30",
-    education: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
-    lifestyle: "bg-teal-500/20 text-teal-300 border-teal-500/30",
-    opinion: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-    world: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+function catLabel(cat: NewsCategory): string {
+  const labels: Record<NewsCategory, string> = {
+    politics: "Politics", business: "Business", technology: "Tech",
+    science: "Science", health: "Health", sports: "Sports",
+    entertainment: "Culture", environment: "Climate", crime: "Crime",
+    education: "Education", lifestyle: "Lifestyle", opinion: "Opinion",
+    world: "World",
   };
-  return m[cat];
+  return labels[cat];
 }
 
-function catAccent(cat: NewsCategory): string {
+function catColor(cat: NewsCategory): string {
   const m: Record<NewsCategory, string> = {
-    politics: "border-violet-500/20",
-    business: "border-emerald-500/20",
-    technology: "border-cyan-500/20",
-    science: "border-amber-500/20",
-    health: "border-rose-500/20",
-    sports: "border-orange-500/20",
-    entertainment: "border-pink-500/20",
-    environment: "border-green-500/20",
-    crime: "border-red-500/20",
-    education: "border-indigo-500/20",
-    lifestyle: "border-teal-500/20",
-    opinion: "border-yellow-500/20",
-    world: "border-blue-500/20",
+    politics: "text-violet-300/80",
+    business: "text-emerald-300/80",
+    technology: "text-sky-300/80",
+    science: "text-amber-300/80",
+    health: "text-rose-300/80",
+    sports: "text-orange-300/80",
+    entertainment: "text-pink-300/80",
+    environment: "text-green-300/80",
+    crime: "text-red-300/80",
+    education: "text-indigo-300/80",
+    lifestyle: "text-teal-300/80",
+    opinion: "text-yellow-300/80",
+    world: "text-blue-300/80",
   };
   return m[cat];
 }
@@ -97,65 +90,52 @@ function HeroCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       className="group cursor-pointer"
       onClick={() => onSelect(article)}
     >
-      <div
-        className={`rounded-2xl overflow-hidden border ${catAccent(
-          article.category
-        )} bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300`}
-      >
+      <div className="rounded-xl overflow-hidden bg-white/[0.02] border border-white/[0.05] hover:border-white/[0.08] transition-all duration-200">
         <div className="relative w-full h-[180px] overflow-hidden">
           {!imgErr && article.imageUrl ? (
             <Image
               src={article.imageUrl}
               alt=""
               fill
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
               sizes="420px"
               onError={() => setImgErr(true)}
               unoptimized
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-cyan-900/30 to-blue-900/30" />
+            <div className="w-full h-full bg-gradient-to-br from-white/[0.04] to-white/[0.02]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#080c1e] via-[#080c1e]/40 to-transparent" />
-          <div className="absolute bottom-3 left-4 right-4">
-            <span
-              className={`inline-block text-[9px] uppercase tracking-widest font-bold px-2.5 py-1 rounded-md border backdrop-blur-md mb-2 ${catColor(
-                article.category
-              )}`}
-            >
-              {article.category}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/40 to-transparent" />
+          <div className="absolute bottom-3.5 left-4 right-4">
+            <span className={`text-[10px] uppercase tracking-widest font-semibold ${catColor(article.category)}`}>
+              {catLabel(article.category)}
             </span>
-            <h3 className="text-[16px] font-bold text-white leading-tight drop-shadow-lg">
+            <h3 className="text-[17px] font-semibold text-white/95 leading-[1.35] mt-1.5 drop-shadow-lg">
               {article.title}
             </h3>
           </div>
         </div>
-        <div className="px-4 py-3">
-          <p className="text-[12px] text-white/40 leading-relaxed line-clamp-2 mb-3">
+        <div className="px-4 py-3.5">
+          <p className="text-[13px] text-white/45 leading-[1.7] line-clamp-2 mb-3">
             {article.snippet}
           </p>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-cyan-500/15 flex items-center justify-center">
-                <span className="text-[8px] text-cyan-400 font-bold">
-                  {article.source.charAt(0)}
-                </span>
-              </div>
-              <span className="text-[11px] text-cyan-400/70 font-medium">
+              <span className="text-[12px] text-white/40 font-medium">
                 {article.source}
               </span>
-              <span className="text-white/10 text-[10px]">·</span>
-              <span className="text-[10px] text-white/25">
+              <span className="text-white/15">&middot;</span>
+              <span className="text-[11px] text-white/25">
                 {timeAgo(article.timestamp)}
               </span>
             </div>
-            <span className="text-[10px] text-white/20 group-hover:text-cyan-400/60 transition-colors font-medium">
-              Read →
+            <span className="text-[11px] text-white/20 group-hover:text-white/40 transition-colors">
+              Read &rarr;
             </span>
           </div>
         </div>
@@ -178,57 +158,46 @@ function CompactCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index * 0.04 }}
       className="group cursor-pointer"
       onClick={() => onSelect(article)}
     >
-      <div
-        className={`flex gap-3.5 p-3 rounded-xl border ${catAccent(
-          article.category
-        )} bg-white/[0.015] hover:bg-white/[0.05] transition-all duration-200`}
-      >
+      <div className="flex gap-4 p-3 rounded-xl hover:bg-white/[0.03] transition-colors duration-150">
         <div className="relative w-[100px] h-[72px] rounded-lg overflow-hidden flex-shrink-0 bg-white/[0.03]">
           {!imgErr && article.imageUrl ? (
             <Image
               src={article.imageUrl}
               alt=""
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-110"
+              className="object-cover"
               sizes="100px"
               onError={() => setImgErr(true)}
               unoptimized
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-cyan-900/20 to-blue-900/20" />
+            <div className="w-full h-full bg-white/[0.04]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/20" />
         </div>
 
         <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className={`text-[8px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded border ${catColor(
-                  article.category
-                )}`}
-              >
-                {article.category}
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <span className={`text-[10px] uppercase tracking-wider font-semibold ${catColor(article.category)}`}>
+                {catLabel(article.category)}
               </span>
               <span className="text-[10px] text-white/20">
                 {timeAgo(article.timestamp)}
               </span>
             </div>
-            <h4 className="text-[12.5px] font-semibold text-white/85 leading-snug line-clamp-2 group-hover:text-cyan-300 transition-colors">
+            <h4 className="text-[14px] font-medium text-white/80 leading-[1.4] line-clamp-2 group-hover:text-white/95 transition-colors">
               {article.title}
             </h4>
           </div>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="text-[10px] text-cyan-400/60 font-medium">
-              {article.source}
-            </span>
-          </div>
+          <span className="text-[11px] text-white/30 mt-1.5">
+            {article.source}
+          </span>
         </div>
       </div>
     </motion.div>
@@ -247,17 +216,17 @@ function ArticleDetail({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 30 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 30 }}
+      exit={{ opacity: 0, x: 20 }}
       transition={{ type: "spring", damping: 28, stiffness: 320 }}
       className="flex flex-col h-full"
     >
       {/* Sticky header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.05] bg-[#0a0e22]/80 backdrop-blur-lg">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-[12px] text-white/40 hover:text-cyan-400 transition-colors group"
+          className="flex items-center gap-2 text-[13px] text-white/40 hover:text-white/70 transition-colors group"
         >
           <svg
             className="w-4 h-4 transition-transform group-hover:-translate-x-0.5"
@@ -278,7 +247,7 @@ function ArticleDetail({
           href={article.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[11px] text-cyan-400/70 hover:text-cyan-300 transition-colors font-medium"
+          className="flex items-center gap-1.5 text-[12px] text-white/40 hover:text-white/60 transition-colors"
         >
           {article.source}
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,20 +270,16 @@ function ArticleDetail({
               unoptimized
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-cyan-900/30 to-blue-900/30" />
+            <div className="w-full h-full bg-gradient-to-br from-white/[0.04] to-white/[0.02]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e22] via-[#0a0e22]/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/30 to-transparent" />
         </div>
 
         <div className="px-6 -mt-8 relative z-10">
           {/* Category + time */}
-          <div className="flex items-center gap-2.5 mb-3">
-            <span
-              className={`text-[9px] uppercase tracking-widest font-bold px-2.5 py-1 rounded-md border backdrop-blur-sm ${catColor(
-                article.category
-              )}`}
-            >
-              {article.category}
+          <div className="flex items-center gap-3 mb-3">
+            <span className={`text-[10px] uppercase tracking-widest font-semibold ${catColor(article.category)}`}>
+              {catLabel(article.category)}
             </span>
             <span className="text-[11px] text-white/25">
               {timeAgo(article.timestamp)}
@@ -322,43 +287,38 @@ function ArticleDetail({
           </div>
 
           {/* Title */}
-          <h2 className="text-[20px] font-bold text-white leading-[1.3] mb-4 tracking-tight">
+          <h2 className="text-[22px] font-semibold text-white/95 leading-[1.35] mb-5 tracking-[-0.01em]">
             {article.title}
           </h2>
 
           {/* Source bar */}
-          <div className="flex items-center gap-3 mb-5 pb-5 border-b border-white/[0.06]">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center">
-              <span className="text-[11px] text-cyan-400 font-bold">
+          <div className="flex items-center gap-3 mb-6 pb-5 border-b border-white/[0.06]">
+            <div className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
+              <span className="text-[12px] text-white/50 font-semibold">
                 {article.source.charAt(0)}
               </span>
             </div>
             <div>
-              <span className="text-[13px] text-white/80 font-medium block">
+              <span className="text-[14px] text-white/70 font-medium block">
                 {article.source}
               </span>
-              <span className="text-[10px] text-white/25">
-                Trusted news source
+              <span className="text-[11px] text-white/25">
+                News source
               </span>
             </div>
           </div>
 
           {/* Article body */}
-          <div className="space-y-4 mb-8">
-            <p className="text-[14px] text-white/60 leading-[1.8]">
+          <div className="space-y-5 mb-8">
+            <p className="text-[15px] text-white/55 leading-[1.8]">
               {article.snippet}
             </p>
-            <p className="text-[14px] text-white/45 leading-[1.8]">
+            <p className="text-[15px] text-white/40 leading-[1.8]">
               This is a developing story. Our reporters on the ground continue
               to gather details and will provide updates as more information
               becomes available. The situation has drawn attention from
               international observers and analysts who are closely monitoring
               developments.
-            </p>
-            <p className="text-[14px] text-white/35 leading-[1.8]">
-              Experts suggest that the implications of this story could be
-              far-reaching, affecting multiple sectors and stakeholders across
-              the region.
             </p>
           </div>
 
@@ -367,18 +327,15 @@ function ArticleDetail({
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-2.5 w-full py-3.5 rounded-xl text-[13px] font-semibold transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] mb-6"
+            className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-xl text-[14px] font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] mb-6 text-white/70 hover:text-white/90"
             style={{
-              background:
-                "linear-gradient(135deg, rgba(0, 150, 255, 0.15), rgba(0, 80, 255, 0.1))",
-              border: "1px solid rgba(0, 150, 255, 0.25)",
-              color: "rgba(0, 200, 255, 0.85)",
-              boxShadow: "0 4px 20px rgba(0, 100, 255, 0.1)",
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
             }}
           >
             Continue reading on {article.source}
             <svg
-              className="w-4 h-4 transition-transform group-hover:translate-x-0.5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -413,7 +370,6 @@ export default function NewsPanel() {
     ? countries.find((c) => c.code === selectedCountry) || null
     : null;
 
-  // Reset article selection when country changes
   useEffect(() => {
     setSelectedArticle(null);
   }, [selectedCountry]);
@@ -441,7 +397,7 @@ export default function NewsPanel() {
             className="fixed inset-0 z-40"
             style={{
               background:
-                "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.6) 100%)",
+                "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.55) 100%)",
             }}
             onClick={handleClose}
           />
@@ -455,11 +411,9 @@ export default function NewsPanel() {
             className="fixed top-0 right-0 h-full z-50 flex flex-col"
             style={{
               width: "min(480px, 100vw)",
-              background:
-                "linear-gradient(180deg, #0a0e22 0%, #080c1e 100%)",
-              borderLeft: "1px solid rgba(0, 150, 255, 0.08)",
-              boxShadow:
-                "-30px 0 80px rgba(0, 0, 0, 0.6), -5px 0 30px rgba(0, 50, 150, 0.05)",
+              background: "#0c0d12",
+              borderLeft: "1px solid rgba(255, 255, 255, 0.06)",
+              boxShadow: "-20px 0 60px rgba(0, 0, 0, 0.5)",
             }}
           >
             <AnimatePresence mode="wait">
@@ -474,23 +428,22 @@ export default function NewsPanel() {
                   key="list"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, x: -15 }}
+                  exit={{ opacity: 0, x: -10 }}
                   className="flex flex-col h-full"
                 >
                   {/* Header */}
-                  <div className="px-5 pt-5 pb-4 border-b border-white/[0.05]">
+                  <div className="px-5 pt-5 pb-4 border-b border-white/[0.06]">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-2xl">
+                        <span className="text-2xl">
                           {COUNTRY_FLAGS[countryData.code] || "🌐"}
-                        </div>
+                        </span>
                         <div>
-                          <h2 className="text-[18px] font-bold text-white tracking-tight">
+                          <h2 className="text-[20px] font-semibold text-white/95 tracking-[-0.01em]">
                             {countryData.name}
                           </h2>
-                          <p className="text-[11px] text-white/25 mt-0.5">
-                            {countryData.articles.length} stories · trusted
-                            sources
+                          <p className="text-[11px] text-white/30 mt-0.5">
+                            {countryData.articles.length} stories today
                           </p>
                         </div>
                       </div>
@@ -503,13 +456,13 @@ export default function NewsPanel() {
                     </div>
 
                     {/* Category filters */}
-                    <div className="flex gap-1.5 mt-4 overflow-x-auto pb-1 scrollbar-hide">
+                    <div className="flex gap-1 mt-4 overflow-x-auto pb-1 scrollbar-hide">
                       <button
                         onClick={() => setActiveCategory(null)}
-                        className={`px-3 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all border ${
+                        className={`px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-all ${
                           !activeCategory
-                            ? "bg-white/[0.08] text-white/70 border-white/[0.1]"
-                            : "bg-transparent text-white/30 border-transparent hover:text-white/50"
+                            ? "bg-white/[0.08] text-white/70"
+                            : "text-white/30 hover:text-white/50 hover:bg-white/[0.03]"
                         }`}
                       >
                         All
@@ -523,13 +476,12 @@ export default function NewsPanel() {
                           <button
                             key={cat.key}
                             onClick={() => setActiveCategory(cat.key)}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all border ${
+                            className={`px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-all ${
                               activeCategory === cat.key
-                                ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/25"
-                                : "bg-transparent text-white/30 border-transparent hover:text-white/50"
+                                ? "bg-white/[0.08] text-white/70"
+                                : "text-white/30 hover:text-white/50 hover:bg-white/[0.03]"
                             }`}
                           >
-                            <span className="text-[11px]">{cat.icon}</span>
                             {cat.label}
                           </button>
                         );
@@ -538,7 +490,7 @@ export default function NewsPanel() {
                   </div>
 
                   {/* Articles feed */}
-                  <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 scrollbar-thin">
+                  <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin">
                     {filteredArticles.length > 0 ? (
                       filteredArticles.map((article, i) =>
                         i === 0 ? (
@@ -557,25 +509,25 @@ export default function NewsPanel() {
                         )
                       )
                     ) : (
-                      <div className="flex flex-col items-center justify-center py-16 text-white/15">
-                        <span className="text-3xl mb-3">📭</span>
+                      <div className="flex flex-col items-center justify-center py-16 text-white/20">
+                        <span className="text-2xl mb-3">No stories</span>
                         <span className="text-[13px]">
-                          No stories in this category
+                          in this category
                         </span>
                       </div>
                     )}
                   </div>
 
                   {/* Footer */}
-                  <div className="px-5 py-3 border-t border-white/[0.04] bg-white/[0.01]">
+                  <div className="px-5 py-3 border-t border-white/[0.05]">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] text-white/15">
-                        Reuters · AP · BBC · and other trusted outlets
+                      <p className="text-[10px] text-white/20">
+                        Sources: Reuters, AP, BBC &amp; local outlets
                       </p>
-                      <div className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60"></span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60" />
                         <span className="text-[10px] text-white/20">
-                          Updated live
+                          Live
                         </span>
                       </div>
                     </div>
