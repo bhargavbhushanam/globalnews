@@ -82,13 +82,13 @@ const LOCALE: Record<string, Locale> = {
   TZ: { hl: "en-TZ", gl: "TZ", ceid: "TZ:en" },
   PK: { hl: "en-PK", gl: "PK", ceid: "PK:en" },
   MY: { hl: "en-MY", gl: "MY", ceid: "MY:en" },
-  AE: { hl: "en-AE", gl: "AE", ceid: "AE:en" },
+  AE: { hl: "ar",    gl: "AE", ceid: "AE:ar" },
   IL: { hl: "en-IL", gl: "IL", ceid: "IL:en" },
-  BD: { hl: "en-BD", gl: "BD", ceid: "BD:en" },
-  ET: { hl: "en-ET", gl: "ET", ceid: "ET:en" },
-  EG: { hl: "en-EG", gl: "EG", ceid: "EG:en" },
-  SA: { hl: "en-SA", gl: "SA", ceid: "SA:en" },
-  JO: { hl: "en-JO", gl: "JO", ceid: "JO:en" },
+  BD: { hl: "bn",    gl: "BD", ceid: "BD:bn" },
+  ET: { hl: "am",    gl: "ET", ceid: "ET:am" },
+  EG: { hl: "ar",    gl: "EG", ceid: "EG:ar" },
+  SA: { hl: "ar",    gl: "SA", ceid: "SA:ar" },
+  JO: { hl: "ar",    gl: "JO", ceid: "JO:ar" },
 
   // Native‑language feeds — Google News curates LOCAL headlines for these
   FR: { hl: "fr",    gl: "FR", ceid: "FR:fr" },
@@ -120,52 +120,101 @@ const LOCALE: Record<string, Locale> = {
 };
 
 // ─── Relevance filtering ────────────────────────────────────────────────────
-// For each country, distinctive terms that STRONGLY signal an article is about
-// that country. Used to detect cross-country pollution (e.g. US news leaking
-// into the Germany feed).
+//
+// FIRST-PRINCIPLES APPROACH:
+// The biggest source of noise is US/UK domestic news leaking into feeds for
+// countries like Kenya, Nigeria, South Africa, etc. These countries get
+// English-language Google News feeds that mix local news with US/UK content.
+//
+// Old approach (broken): try to match each article to a country via signals.
+// Problem: "Maryland school board votes..." has NO country signal — it slips
+// through because it doesn't mention "America" or "Trump".
+//
+// New approach (multi-layer):
+//  1. Non-Latin script → trust it (came from native-language feed)
+//  2. Feed is for US/GB/CA/AU/NZ → trust it (English-speaking, native feed)
+//  3. For all other English feeds, check TWO things:
+//     a. BLOCKLIST: Does title contain US states/cities/institutions,
+//        UK-specific terms, or other Western domestic terms? → REJECT
+//     b. FOREIGN SIGNAL: Does title match another country more than own? → REJECT
+//  4. ALLOWLIST boost: If title positively mentions target country → PASS always
+
+// ── US domestic content detection ──────────────────────────────────────────
+// All 50 states, major cities, US-only institutions, US political terms.
+// If an article matches this and it's NOT the US feed, it's almost certainly
+// US domestic news that leaked into a foreign feed.
+const US_STATES = /\balabama\b|\balaska\b|\barizona\b|\barkansas\b|\bcalifornia\b|\bcolorado\b|\bconnecticut\b|\bdelaware\b|\bflorida\b|\bgeorgia\b|\bhawaii\b|\bidaho\b|\billinois\b|\bindiana\b|\biowa\b|\bkansas\b|\bkentucky\b|\blouisiana\b|\bmaine\b|\bmaryland\b|\bmassachusetts\b|\bmichigan\b|\bminnesota\b|\bmississippi\b|\bmissouri\b|\bmontana\b|\bnebraska\b|\bnevada\b|\bnew\s?hampshire\b|\bnew\s?jersey\b|\bnew\s?mexico\b|\bnew\s?york\b|\bnorth\s?carolina\b|\bnorth\s?dakota\b|\bohio\b|\boklahoma\b|\boregon\b|\bpennsylvania\b|\brhode\s?island\b|\bsouth\s?carolina\b|\bsouth\s?dakota\b|\btennessee\b|\btexas\b|\butah\b|\bvermont\b|\bvirginia\b|\bwest\s?virginia\b|\bwashington\s?state\b|\bwisconsin\b|\bwyoming\b/i;
+
+const US_CITIES = /\blos\s?angeles\b|\bchicago\b|\bhouston\b|\bphoenix\b|\bphiladelphia\b|\bsan\s?antonio\b|\bsan\s?diego\b|\bdallas\b|\bsan\s?jose\b|\baustin\b|\bjacksonville\b|\bsan\s?francisco\b|\bseattle\b|\bdenver\b|\bboston\b|\bel\s?paso\b|\bnashville\b|\bportland\b|\blas\s?vegas\b|\bmemphis\b|\blouisville\b|\bbaltimore\b|\bmilwaukee\b|\balbuquerque\b|\btucson\b|\bfresno\b|\bsacramento\b|\bmesa\b|\batlanta\b|\bkansas\s?city\b|\bmiami\b|\braleigh\b|\bdetroit\b|\bminneapolis\b|\btampa\b|\bst\.?\s?louis\b|\bpittsburgh\b|\bcincinnati\b|\borlando\b|\bcleveland\b|\bnew\s?orleans\b|\bcharlotte\b|\bbrooklyn\b|\bmanhattan\b|\bbronx\b|\bqueens\b|\bstaten\s?island\b|\bhollywood\b|\bsilicon\s?valley\b/i;
+
+const US_INSTITUTIONS = /\bfbi\b|\bcia\b|\bnsa\b|\bdhs\b|\batf\b|\bdea\b|\bsecret\s?service\b|\bu\.?s\.?\s?(marshal|army|navy|marine|air\s?force|coast\s?guard)\b|\bnypd\b|\blapd\b|\bchicago\s?p[od]\b|\bscotus\b|\bsupreme\s?court\b(?!.*\b(india|canad|uk|brit|austral|philippin|pakistan|nigeria|kenya|south.africa))/i;
+
+const US_POLITICS = /\btrump\b|\bbiden\b|\bobama\b|\bwhite\s?house\b|\bcongress\b|\bwashington\s?d\.?c\b|\brepublican\b|\bdemocrat\b|\bgop\b|\bcapitol\s?hill\b|\bpentagon\b|\boval\s?office\b|\bspeaker\s?of\s?the\s?house\b|\bsecretar[yi]\s?of\s?state\b|\battorney\s?general\b|\bstate\s?of\s?the\s?union\b|\bexecutive\s?order\b|\bsenate\b(?!.*\b(canad|philippin|australia|french|italy|brazil|mexico))|\bjd\s?vance\b|\bmike\s?johnson\b|\bnancy\s?pelosi\b|\bmitch\s?mcconnell\b|\bchuck\s?schumer\b|\bron\s?desantis\b|\bgavin\s?newsom\b|\baoc\b/i;
+
+const US_CULTURE = /\bnfl\b|\bnba\b|\bmlb\b|\bnhl\b|\bsuper\s?bowl\b|\bmarch\s?madness\b|\bcollege\s?football\b|\bncaa\b|\bmajor\s?league\b|\bwall\s?street\b|\bblack\s?friday\b|\bthanksgiving\b|\b(4th|fourth)\s?of\s?july\b|\bindependence\s?day\b|\bsocial\s?security\b|\bmedicare\b|\bmedicaid\b|\b401k\b|\birs\b|\bpresidents?\s?day\b|\bmemorial\s?day\b|\blabor\s?day\b|\bveterans?\s?day\b|\bfederal\s?holiday\b|\bdmv\b|\bgreen\s?card\b|\bsnapchat\b|\bamerican\s?dream\b|\bgrand\s?jury\b|\bdistrict\s?attorney\b|\bda\s?office\b|\bsheriff\b/i;
+
+function isUSDomestic(title: string): boolean {
+  return US_STATES.test(title) || US_CITIES.test(title) || US_INSTITUTIONS.test(title) || US_POLITICS.test(title) || US_CULTURE.test(title);
+}
+
+// ── UK domestic content detection ──────────────────────────────────────────
+const UK_DOMESTIC = /\bwestminster\b|\bdowning\s?street\b|\bsunak\b|\bstarmer\b|\bhouse\s?of\s?commons\b|\bhouse\s?of\s?lords\b|\bnhs\b|\bbritish\b|\bbritain\b|\bu\.?k\.?\b|\blondon\b(?!.*\b(ontario|kentucky))|(?<!\bnew\s)\byork\b|\bmanchester\b|\bbirmingham\b(?!.*\balabama\b)|\bliverpool\b|\bleeds\b|\bbristol\b|\bedinburgh\b|\bglasgow\b|\bcardiff\b|\bbelfast\b|\bscotland\b|\bwales\b|\bengland\b|\bnorthern\s?ireland\b|\bbarclays\b|\bbbc\b|\bpremier\s?league\b|\bbrexit\b|\btory\b|\btories\b|\blabour\s?party\b|\blib\s?dem/i;
+
+function isUKDomestic(title: string): boolean {
+  return UK_DOMESTIC.test(title);
+}
+
+// ── Canadian domestic ──────────────────────────────────────────────────────
+const CA_DOMESTIC = /\bottawa\b|\btoronto\b|\bvancouver\b|\bmontreal\b|\bcalgary\b|\bedmonton\b|\bwinnipeg\b|\bquebec\b|\bontario\b|\balberta\b|\bbritish\s?columbia\b|\bmanitoba\b|\bsaskatchewan\b|\bnova\s?scotia\b|\btrudeau\b|\bcanadian\b|\bcanada\b|\brcmp\b/i;
+
+// ── Australian domestic ────────────────────────────────────────────────────
+const AU_DOMESTIC = /\bsydney\b|\bmelbourne\b|\bbrisbane\b|\bperth\b|\badelaide\b|\bcanberra\b|\baustralian\b|\baustralia\b|\bqueensland\b|\bvictoria\b(?!.*\b(secret|beckham|lake))|\bnew\s?south\s?wales\b|\btasmania\b/i;
+
+// ── Positive country signals ───────────────────────────────────────────────
+// If an article matches these for the TARGET country, it DEFINITELY belongs.
 const COUNTRY_SIGNALS: Record<string, RegExp> = {
-  US: /\btrump\b|\bbiden\b|\bwhite\s?house\b|\bcongress\b|\bwashington\s?d\.?c\b|\brepublican\b|\bdemocrat\b|\bgop\b|\bsenate\b|\bcapitol\b|\bpentagon\b|\bamerica\b|\bu\.?s\.?\b/i,
-  GB: /\bwestminster\b|\bdowning\s?street\b|\bsunak\b|\bstarmer\b|\bcommons\b|\blords\b|\bnhs\b|\bbritish\b|\bbritain\b|\bu\.?k\.?\b/i,
+  US: /\bamerica\b|\bu\.?s\.?a?\b|\bunited\s?states\b/i,
+  GB: /\bbritain\b|\bu\.?k\.?\b|\bunited\s?kingdom\b|\bengland\b/i,
   CN: /\bbeijing\b|\bxi\s?jinping\b|\bccp\b|\bchinese\b|\bchina\b/i,
   RU: /\bputin\b|\bkremlin\b|\bmoscow\b|\brussia\b|\brussian\b/i,
   UA: /\bzelensky\b|\bkyiv\b|\bukrain/i,
   IL: /\bnetanyahu\b|\bidf\b|\bisrael\b|\bgaza\b|\bwest\s?bank\b|\bpalestini/i,
-  IN: /\bmodi\b|\bdelhi\b|\bmumbai\b|\bindia\b|\bindian\b/i,
-  JP: /\btokyo\b|\bjapan\b|\bjapanese\b/i,
-  FR: /\bmacron\b|\bparis\b|\bfranc[e]/i,
-  DE: /\bscholz\b|\bberlin\b|\bgerman[y]?\b|\bbundestag\b/i,
-  BR: /\blula\b|\bbrasilia\b|\bbrazil\b|\bbrazilian\b/i,
+  IN: /\bmodi\b|\bdelhi\b|\bmumbai\b|\bindia\b|\bindian\b|\bbollywood\b|\bbangalore\b|\bhyderabad\b|\bchennai\b|\bkolkata\b/i,
+  JP: /\btokyo\b|\bjapan\b|\bjapanese\b|\bosaka\b/i,
+  FR: /\bmacron\b|\bparis\b|\bfranc[e]\b|\bfrench\b/i,
+  DE: /\bscholz\b|\bberlin\b|\bgerman[y]?\b|\bbundestag\b|\bmunich\b|\bfrankfurt\b/i,
+  BR: /\blula\b|\bbrasilia\b|\bbrazil\b|\bbrazilian\b|\bsao\s?paulo\b|\brio\b/i,
   KR: /\bseoul\b|\bsouth\s?korea\b|\bkorean\b/i,
   AU: /\bcanberra\b|\baustralia\b|\baustralian\b/i,
   CA: /\bottawa\b|\bcanada\b|\bcanadian\b|\btrudeau\b/i,
-  MX: /\bmexico\b|\bmexican\b/i,
-  SA: /\briyadh\b|\bsaudi\b/i,
+  MX: /\bmexico\b|\bmexican\b|\bmexico\s?city\b/i,
+  SA: /\briyadh\b|\bsaudi\b|\bjeddah\b/i,
   EG: /\bcairo\b|\begypt\b|\begyptian\b/i,
-  TR: /\berdogan\b|\bankara\b|\bturk(ey|ish)\b/i,
+  TR: /\berdogan\b|\bankara\b|\bturk(ey|ish)\b|\bistanbul\b/i,
   NG: /\babuja\b|\blagos\b|\bnigeria\b|\bnigerian\b/i,
   AR: /\bbuenos\s?aires\b|\bargentin/i,
-  IT: /\brome\b|\bitaly\b|\bitalian\b|\bmeloni\b/i,
-  ES: /\bmadrid\b|\bspain\b|\bspanish\b/i,
-  PL: /\bwarsaw\b|\bpoland\b|\bpolish\b/i,
-  NL: /\bnetherlands\b|\bdutch\b|\bamsterdam\b/i,
+  IT: /\brome\b|\bitaly\b|\bitalian\b|\bmeloni\b|\bmilan\b/i,
+  ES: /\bmadrid\b|\bspain\b|\bspanish\b|\bbarcelona\b/i,
+  PL: /\bwarsaw\b|\bpoland\b|\bpolish\b|\bkrakow\b/i,
+  NL: /\bnetherlands\b|\bdutch\b|\bamsterdam\b|\bthe\s?hague\b/i,
   SE: /\bsweden\b|\bswedish\b|\bstockholm\b/i,
   CH: /\bswitzerland\b|\bswiss\b|\bgeneva\b|\bzurich\b/i,
   GR: /\bgreece\b|\bgreek\b|\bathens\b/i,
   NO: /\bnorway\b|\bnorwegian\b|\boslo\b/i,
   ID: /\bindonesia\b|\bindonesian\b|\bjakarta\b/i,
   TH: /\bthailand\b|\bthai\b|\bbangkok\b/i,
-  VN: /\bvietnam\b|\bvietnamese\b|\bhanoi\b/i,
-  PH: /\bphilippines\b|\bfilipino\b|\bmanila\b/i,
+  VN: /\bvietnam\b|\bvietnamese\b|\bhanoi\b|\bho\s?chi\s?minh\b/i,
+  PH: /\bphilippines\b|\bfilipino\b|\bmanila\b|\bdutertes?\b|\bmarcos\b/i,
   SG: /\bsingapore\b|\bsingaporean\b/i,
-  PK: /\bpakistan\b|\bpakistani\b|\bislamabad\b/i,
+  PK: /\bpakistan\b|\bpakistani\b|\bislamabad\b|\bkarachi\b|\blahore\b/i,
   BD: /\bbangladesh\b|\bbangladeshi\b|\bdhaka\b/i,
   MY: /\bmalaysia\b|\bmalaysian\b|\bkuala\s?lumpur\b/i,
-  CO: /\bcolombia\b|\bcolombian\b|\bbogota\b/i,
+  CO: /\bcolombia\b|\bcolombian\b|\bbogota\b|\bmedellin\b/i,
   CL: /\bchile\b|\bchilean\b|\bsantiago\b/i,
   PE: /\bperu\b|\bperuvian\b|\blima\b/i,
   ET: /\bethiopia\b|\bethiopian\b|\baddis\s?ababa\b/i,
   GH: /\bghana\b|\bghanaian\b|\baccra\b/i,
-  MA: /\bmorocco\b|\bmoroccan\b|\brabat\b/i,
+  MA: /\bmorocco\b|\bmoroccan\b|\brabat\b|\bcasablanca\b/i,
   TZ: /\btanzania\b|\btanzanian\b|\bdar\s?es\s?salaam\b/i,
   AE: /\bdubai\b|\babu\s?dhabi\b|\bemirati\b|\buae\b/i,
   JO: /\bjordan\b|\bjordanian\b|\bamman\b/i,
@@ -174,42 +223,49 @@ const COUNTRY_SIGNALS: Record<string, RegExp> = {
   ZA: /\bsouth\s?africa\b|\bpretoria\b|\bjohannesburg\b|\bcape\s?town\b/i,
 };
 
+// Countries whose native Google News feed is their OWN domestic content.
+// For these, we trust the feed and skip heavy filtering.
+const ENGLISH_NATIVE = new Set(["US", "GB", "CA", "AU", "NZ"]);
+
 /**
- * Check whether an article is relevant to its assigned country.
+ * Multi-layer relevance filter. Decides if an article belongs to country X.
  *
- * Strategy:
- *  1. If the title is NOT in English (rough heuristic), trust it — it came
- *     from a native‑language feed so it's domestically relevant.
- *  2. If the title IS English, check whether it matches a DIFFERENT country's
- *     signals more strongly than the target country.
+ * Layer 1: Non-Latin script → PASS (native-language feed, inherently local)
+ * Layer 2: Target is US/GB/CA/AU/NZ → PASS (English-native, trust their feed)
+ * Layer 3: Title positively mentions target country → PASS (allowlist)
+ * Layer 4: Title contains US/UK/CA/AU domestic terms → REJECT (blocklist)
+ * Layer 5: Title matches a foreign country signal but not own → REJECT
+ * Layer 6: Everything else → PASS (generic international news, acceptable)
  */
 function isRelevantToCountry(title: string, countryCode: string): boolean {
-  // Rough check: does the title contain mostly ASCII latin chars?
+  // Layer 1: Non-Latin script = native feed = trust it
   const asciiRatio = (title.match(/[a-zA-Z]/g) || []).length / Math.max(title.length, 1);
-  if (asciiRatio < 0.5) return true; // Non-latin script → native feed → trust it
+  if (asciiRatio < 0.5) return true;
 
-  const titleLower = title.toLowerCase();
+  // Layer 2: English-native countries trust their own feed
+  if (ENGLISH_NATIVE.has(countryCode)) return true;
 
-  // Count how many OTHER countries' signals match
+  const t = title.toLowerCase();
+
+  // Layer 3: Positive match for target country → always accept
   const ownSignal = COUNTRY_SIGNALS[countryCode];
-  const ownMatch = ownSignal ? ownSignal.test(titleLower) : false;
+  if (ownSignal && ownSignal.test(t)) return true;
 
-  let strongerForeignMatch = false;
+  // Layer 4: Blocklist — US/UK/CA/AU domestic content appearing in foreign feeds
+  if (countryCode !== "US" && isUSDomestic(t)) return false;
+  if (countryCode !== "GB" && isUKDomestic(t)) return false;
+  if (countryCode !== "CA" && CA_DOMESTIC.test(t)) return false;
+  if (countryCode !== "AU" && AU_DOMESTIC.test(t)) return false;
+
+  // Layer 5: Foreign country signal match without own match
   for (const [code, regex] of Object.entries(COUNTRY_SIGNALS)) {
     if (code === countryCode) continue;
-    if (regex.test(titleLower)) {
-      // A foreign country's signal matched. If OUR signal didn't match,
-      // this article probably belongs to the other country.
-      if (!ownMatch) {
-        strongerForeignMatch = true;
-        break;
-      }
-    }
+    if (regex.test(t)) return false; // Mentions another country, not ours
   }
 
-  // If a foreign signal matched but ours didn't, filter it out
-  if (strongerForeignMatch) return false;
-
+  // Layer 6: Generic news with no country signals — accept it
+  // (Could be local news that doesn't mention the country by name,
+  //  e.g. "Fuel prices rise 10%" from a Kenyan source about Kenya)
   return true;
 }
 
@@ -299,7 +355,7 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-function parseRSSItems(xml: string, countryCode: string): NewsArticle[] {
+function parseRSSItems(xml: string, countryCode: string, strict = false): NewsArticle[] {
   const articles: NewsArticle[] = [];
   const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
   let match;
@@ -333,6 +389,18 @@ function parseRSSItems(xml: string, countryCode: string): NewsArticle[] {
 
     // ─── Relevance check ──────────────────────────────────────────────
     if (!isRelevantToCountry(title, countryCode)) continue;
+
+    // In strict mode (search fallback), require a POSITIVE country mention.
+    // Generic articles like "Quantum Computing Stock to Buy" with no country
+    // signal should not appear in a specific country's feed.
+    if (strict) {
+      const t = title.toLowerCase();
+      const countryMeta = COUNTRIES.find((c) => c.code === countryCode);
+      const nameLower = countryMeta ? countryMeta.name.toLowerCase() : "";
+      const ownSignal = COUNTRY_SIGNALS[countryCode];
+      const hasPositiveMatch = t.includes(nameLower) || (ownSignal && ownSignal.test(t));
+      if (!hasPositiveMatch) continue;
+    }
 
     // Source URL from <source url="...">
     const sourceUrlMatch = itemXml.match(/<source\s+url="([^"]+)"/i);
@@ -391,7 +459,8 @@ async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<string> 
  *     This returns actual domestic top headlines curated by Google for that
  *     country, in the local language. Maximally relevant.
  *  2. If the native feed returns < 3 articles within the last 24h, fall back
- *     to an English search‑based feed — but apply the relevance filter.
+ *     to an English search‑based feed — but apply STRICT filtering:
+ *     the article must positively mention the target country.
  */
 async function fetchCountryNews(
   code: string,
@@ -404,17 +473,46 @@ async function fetchCountryNews(
     try {
       const url = `https://news.google.com/rss?gl=${locale.gl}&hl=${locale.hl}&ceid=${locale.ceid}`;
       const xml = await fetchWithTimeout(url);
-      const articles = parseRSSItems(xml, code);
+      let articles = parseRSSItems(xml, code);
+
+      // If the locale is non-English but the feed returned mostly English
+      // articles, the native feed didn't work (e.g. Amharic for Ethiopia).
+      // Apply strict filtering — only keep articles that mention the country.
+      const isEnglishLocale = locale.hl.startsWith("en");
+      if (!isEnglishLocale && !ENGLISH_NATIVE.has(code) && articles.length > 0) {
+        const englishCount = articles.filter((a) => {
+          const ratio = (a.title.match(/[a-zA-Z]/g) || []).length / Math.max(a.title.length, 1);
+          return ratio > 0.7;
+        }).length;
+        const englishRatio = englishCount / articles.length;
+
+        if (englishRatio > 0.5) {
+          // Non-English locale returned English articles → feed is broken
+          const ownSignal = COUNTRY_SIGNALS[code];
+          const nameLower = name.toLowerCase();
+          articles = articles.filter((a) => {
+            const t = a.title.toLowerCase();
+            // Non-Latin titles are fine (genuinely local)
+            const ascRatio = (a.title.match(/[a-zA-Z]/g) || []).length / Math.max(a.title.length, 1);
+            if (ascRatio < 0.5) return true;
+            // English titles must mention the country
+            return t.includes(nameLower) || (ownSignal && ownSignal.test(t));
+          });
+        }
+      }
+
       if (articles.length >= 3) return articles.slice(0, 15);
     } catch { /* fall through */ }
   }
 
-  // ─── Attempt 2: English search fallback ─────────────────────────────
+  // ─── Attempt 2: English search fallback (STRICT mode) ───────────────
+  // Search-based feeds are noisy. strict=true requires every article to
+  // positively mention the target country by name/signal.
   try {
     const q = encodeURIComponent(name + " when:1d");
     const url = `https://news.google.com/rss/search?q=${q}&hl=en&gl=US&ceid=US:en`;
     const xml = await fetchWithTimeout(url);
-    const articles = parseRSSItems(xml, code); // relevance filter runs inside
+    const articles = parseRSSItems(xml, code, true); // strict mode
     return articles.slice(0, 15);
   } catch {
     return [];
